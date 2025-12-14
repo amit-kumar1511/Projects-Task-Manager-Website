@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
-
+import {connectDB} from "./Database/db.js"
 
 //config dotenv
 dotenv.config();
@@ -17,5 +17,12 @@ app.use(cors({
 
 //middleware to handle JSON object
 app.use(express.json())
+
+//connect database
+connectDB();
+
+app.get("/", (req, res) => {
+  res.send("API running");
+});
 
 app.listen(3000,()=>console.log(`seerver is running`))
