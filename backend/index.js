@@ -3,6 +3,7 @@ import cors from "cors"
 import dotenv from "dotenv"
 import {connectDB} from "./Database/db.js"
 import authRoutes from "./routes/auth.route.js"
+import cookieParser from "cookie-parser"
 
 //config dotenv
 dotenv.config();
@@ -18,6 +19,9 @@ app.use(cors({
 
 //middleware to handle JSON object
 app.use(express.json())
+
+//config cookie parser
+app.use(cookieParser())
 
 //connect database
 connectDB();

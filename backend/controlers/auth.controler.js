@@ -1,6 +1,7 @@
 import { User } from "../models/user.model.js"
 import bcryptjs from "bcryptjs"
 import { errorhandler } from "../utils/error.js"
+import jwt from "jsonwebtoken"
 
 export const signup = async (req,res,next)=>{
     const {name,email,password,profileImgUrl,adminJoinCode} = req.body
@@ -37,5 +38,34 @@ export const signup = async (req,res,next)=>{
         res.json({message:"sign-Up Successful."})
     } catch (error) {
         next(error.message)
+    }
+}
+
+export const signin = async (req,res,next)=>{
+    try {
+        const {email,password} = req.body
+
+        if(!email || !password || email==="" || password==="") return next(errorhandler(404,"all fields are required.."))
+
+        //check valid user
+        const validUser = await User.findOne({email})
+
+        if(!validUser) return next(errorhandler(404,"user noit exist"))
+
+        //compare password
+        const validPass = bcryptjs.compareSync(password,validUser.password) 
+
+        if(!validPass) return next(errorhandler(404,"Incorrect Password please try again.."))
+
+        //all is good then give a token of user 
+        const token = jwt.sign({id: validUser._id},process.env.JWT_SECRET)
+
+        //token me password send nhi krenge
+        const {password :pass,...rest}=validUser._doc
+
+        //token dene ke baad login krba denge user ko
+        res.status(200).cookie("access_token" , token , {httpOnly:true}).json(rest)
+    } catch (error) {
+        next(error)
     }
 }
