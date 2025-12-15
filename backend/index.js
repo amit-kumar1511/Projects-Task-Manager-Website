@@ -2,6 +2,7 @@ import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import {connectDB} from "./Database/db.js"
+import authRoutes from "./routes/auth.route.js"
 
 //config dotenv
 dotenv.config();
@@ -24,5 +25,8 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("API running");
 });
+
+//app route
+app.use("/api/auth",authRoutes)
 
 app.listen(3000,()=>console.log(`seerver is running`))
