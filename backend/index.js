@@ -29,4 +29,17 @@ app.get("/", (req, res) => {
 //app route
 app.use("/api/auth",authRoutes)
 
+//error handle
+app.use((err,req,res,next)=>{
+  const statusCode = err.statusCode || 500
+
+  const message = err.message || "Internel server error"
+
+  res.status(statusCode).json({
+    succes:false,
+    statusCode,
+    message,
+  })
+})
+
 app.listen(3000,()=>console.log(`seerver is running`))
