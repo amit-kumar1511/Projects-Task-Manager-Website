@@ -3,6 +3,7 @@ import {
   signin,
   signout,
   signup,
+  adminSignup,
   updateUserProfile,
   uploadImage,
   userProfile,
@@ -12,6 +13,7 @@ import upload from "../utils/multer.js"
 
 const router = express.Router()
 
+router.post("/admin-signup", adminSignup)
 router.post("/sign-up", signup)
 
 router.post("/sign-in", signin)

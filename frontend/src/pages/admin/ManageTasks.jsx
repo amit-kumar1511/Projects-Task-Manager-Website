@@ -6,11 +6,15 @@ import TaskStatusTabs from "../../components/TaskStatusTabs"
 import { FaFileLines } from "react-icons/fa6"
 import TaskCard from "../../components/TaskCard"
 import toast from "react-hot-toast"
+import EmptyState from "../../components/EmptyState"
+import { MdAddTask } from "react-icons/md"
+import { CardSkeleton } from "../../components/Skeleton"
 
 const ManageTasks = () => {
   const [allTasks, setAllTasks] = useState([])
-  const [tabs, setTabs] = useState("All")
+  const [tabs, setTabs] = useState([])
   const [filterStatus, setFilterStatus] = useState("All")
+  const [loading, setLoading] = useState(true)
 
   console.log(tabs)
 
@@ -18,6 +22,7 @@ const ManageTasks = () => {
 
   const getAllTasks = async () => {
     try {
+      setLoading(true)
       const response = await axiosInstance.get("/tasks", {
         params: {
           status: filterStatus === "All" ? "" : filterStatus,
@@ -40,6 +45,8 @@ const ManageTasks = () => {
       setTabs(statusArray)
     } catch (error) {
       console.log("Error fetching tasks: ", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -96,14 +103,16 @@ const ManageTasks = () => {
             </button>
           </div>
 
-          {allTasks?.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            {tabs?.length > 0 && (
               <TaskStatusTabs
                 tabs={tabs}
                 activeTab={filterStatus}
                 setActiveTab={setFilterStatus}
               />
+            )}
 
+            {allTasks?.length > 0 && (
               <button
                 className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow-md active:scale-95 cursor-pointer"
                 onClick={handleDownloadReport}
@@ -112,29 +121,48 @@ const ManageTasks = () => {
                 <FaFileLines className="text-lg" />
                 <span>Download Report</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {allTasks?.map((item, index) => (
-            <TaskCard
-              key={item._id}
-              title={item.title}
-              description={item.description}
-              priority={item.priority}
-              status={item.status}
-              progress={item.progress}
-              createdAt={item.createdAt}
-              dueDate={item.dueDate}
-              assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
-              attachmentCount={item.attachments?.length || 0}
-              completedTodoCount={item.completedTodoCount || 0}
-              todoChecklist={item.todoChecklist || []}
-              onClick={() => handleClick(item)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            {[...Array(6)].map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        ) : allTasks?.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            {allTasks?.map((item, index) => (
+              <TaskCard
+                key={item._id}
+                title={item.title}
+                description={item.description}
+                priority={item.priority}
+                status={item.status}
+                progress={item.progress}
+                createdAt={item.createdAt}
+                dueDate={item.dueDate}
+                assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
+                attachmentCount={item.attachments?.length || 0}
+                completedTodoCount={item.completedTodoCount || 0}
+                todoChecklist={item.todoChecklist || []}
+                onClick={() => handleClick(item)}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            message={
+              filterStatus !== "All"
+                ? `No tasks found with status "${filterStatus}"`
+                : "No tasks found. Create a new task to get started!"
+            }
+            icon={MdAddTask}
+            actionText={filterStatus === "All" ? "Create Task" : null}
+            onAction={() => navigate("/admin/create-task")}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

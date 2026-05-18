@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux"
 import { signOutSuccess } from "../redux/slice/userSlice"
 import { useNavigate } from "react-router-dom"
 import { SIDE_MENU_DATA, USER_SIDE_MENU_DATA } from "../utils/data"
+import Modal from "./Modal"
+import { MdLogout } from "react-icons/md"
 
 const SideMenu = ({ activeMenu }) => {
   const dispatch = useDispatch()
@@ -11,12 +13,13 @@ const SideMenu = ({ activeMenu }) => {
 
   const [SideMenuData, setSideMenuData] = useState([])
   const { currentUser } = useSelector((state) => state.user)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleClick = (route) => {
     console.log(route)
 
     if (route === "logout") {
-      handleLogut()
+      setShowLogoutModal(true)
       return
     }
 
@@ -87,6 +90,35 @@ const SideMenu = ({ activeMenu }) => {
           </button>
         ))}
       </div>
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Confirm Logout"
+      >
+        <div className="p-4 text-center">
+          <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MdLogout className="text-3xl text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Are you sure?</h3>
+          <p className="text-gray-500 mb-8 text-sm">
+            You will be signed out of your account. Any unsaved changes might be lost.
+          </p>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLogut}
+              className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 font-medium transition-all shadow-lg shadow-red-100"
+            >
+              Yes, Logout
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

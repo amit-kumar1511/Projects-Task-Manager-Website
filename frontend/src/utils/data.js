@@ -5,6 +5,7 @@ import {
   MdManageHistory,
   MdOutlineTaskAlt,
   MdPeopleAlt,
+  MdPersonOutline,
 } from "react-icons/md"
 
 export const SIDE_MENU_DATA = [
@@ -34,6 +35,12 @@ export const SIDE_MENU_DATA = [
   },
   {
     id: 5,
+    label: "Profile",
+    icon: MdPersonOutline,
+    path: "/profile",
+  },
+  {
+    id: 6,
     label: "Logout",
     icon: MdLogout,
     path: "logout",
@@ -55,6 +62,12 @@ export const USER_SIDE_MENU_DATA = [
   },
   {
     id: 3,
+    label: "Profile",
+    icon: MdPersonOutline,
+    path: "/profile",
+  },
+  {
+    id: 4,
     label: "Logout",
     icon: MdLogout,
     path: "logout",

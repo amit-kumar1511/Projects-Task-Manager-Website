@@ -34,9 +34,9 @@ const ProfilePhotoSelector = ({ image, setImage }) => {
           className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer border-2 border-gray-300 hover:border-blue-500 transition-all"
           onClick={onChooseFile}
         >
-          {previewUrl ? (
+          {previewUrl || (typeof image === "string" && image) ? (
             <img
-              src={previewUrl}
+              src={previewUrl || image}
               alt="profile pic"
               className="w-full h-full object-cover"
             />

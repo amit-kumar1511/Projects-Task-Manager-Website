@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "user"],
       default: "user",
     },
+    companyId: {
+      type: String, // We'll store the human-readable companyId string here for easier filtering
+      required: true,
+    },
   },
   { timestamps: true }
 )

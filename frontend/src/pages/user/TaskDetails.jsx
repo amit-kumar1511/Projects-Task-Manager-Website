@@ -5,10 +5,12 @@ import DashboardLayout from "../../components/DashboardLayout"
 import moment from "moment"
 import AvatarGroup from "../../components/AvatarGroup"
 import { FaExternalLinkAlt } from "react-icons/fa"
+import { TaskDetailsSkeleton } from "../../components/Skeleton"
 
 const TaskDetails = () => {
   const { id } = useParams()
   const [task, setTask] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   const getStatusTagColor = (status) => {
     switch (status) {
@@ -25,6 +27,7 @@ const TaskDetails = () => {
 
   const getTaskDetailsById = async () => {
     try {
+      setLoading(true)
       const response = await axiosInstance.get(`/tasks/${id}`)
 
       if (response.data) {
@@ -34,6 +37,8 @@ const TaskDetails = () => {
       }
     } catch (error) {
       console.log("Error fetching task details: ", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -77,7 +82,9 @@ const TaskDetails = () => {
   return (
     <DashboardLayout activeMenu={"My Tasks"}>
       <div className="mt-5 px-4 sm:px-6 lg:px-8">
-        {task && (
+        {loading ? (
+          <TaskDetailsSkeleton />
+        ) : task ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
             <div className="md:col-span-3 space-y-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all hover:shadow-md">
@@ -169,6 +176,8 @@ const TaskDetails = () => {
               </div>
             </div>
           </div>
+        ) : (
+          <div className="text-center py-20 text-gray-500">Task not found</div>
         )}
       </div>
     </DashboardLayout>

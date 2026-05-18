@@ -1,6 +1,8 @@
 import moment from "moment"
 import React from "react"
 import { useNavigate } from "react-router-dom"
+import EmptyState from "./EmptyState"
+import { MdOutlineHistory } from "react-icons/md"
 
 const RecentTasks = ({ tasks }) => {
   const navigate = useNavigate()
@@ -10,12 +12,14 @@ const RecentTasks = ({ tasks }) => {
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">Recent Tasks</h3>
 
-        <button
-          onClick={() => navigate("/admin/tasks")}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors p-2 bg-blue-50 hover:bg-blue-100"
-        >
-          See More →
-        </button>
+        {tasks?.length > 0 && (
+          <button
+            onClick={() => navigate("/admin/tasks")}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors p-2 bg-blue-50 hover:bg-blue-100 rounded-lg"
+          >
+            See More →
+          </button>
+        )}
       </div>
 
       <div className="p-6">
@@ -88,9 +92,10 @@ const RecentTasks = ({ tasks }) => {
             </table>
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">
-            No recent tasks found
-          </p>
+          <EmptyState
+            message="No recent activity found. Start assigning tasks to see them here!"
+            icon={MdOutlineHistory}
+          />
         )}
       </div>
     </div>

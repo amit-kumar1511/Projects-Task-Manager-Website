@@ -6,6 +6,9 @@ import TaskStatusTabs from "../../components/TaskStatusTabs"
 import { FaFileLines } from "react-icons/fa6"
 import TaskCard from "../../components/TaskCard"
 import toast from "react-hot-toast"
+import EmptyState from "../../components/EmptyState"
+import { MdOutlineTaskAlt } from "react-icons/md"
+import { CardSkeleton } from "../../components/Skeleton"
 
 const MyTask = () => {
   const [allTasks, setAllTasks] = useState([])
@@ -16,6 +19,7 @@ const MyTask = () => {
     { label: "Completed", count: 0 },
   ])
   const [filterStatus, setFilterStatus] = useState("All")
+  const [loading, setLoading] = useState(true)
 
   // console.log(tabs)
 
@@ -23,6 +27,7 @@ const MyTask = () => {
 
   const getAllTasks = async () => {
     try {
+      setLoading(true)
       const response = await axiosInstance.get("/tasks", {
         params: {
           status: filterStatus === "All" ? "" : filterStatus,
@@ -43,6 +48,8 @@ const MyTask = () => {
       ])
     } catch (error) {
       console.log("Error fetching tasks: ", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -76,7 +83,9 @@ const MyTask = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {allTasks?.length > 0 ? (
+          {loading ? (
+            [...Array(6)].map((_, i) => <CardSkeleton key={i} />)
+          ) : allTasks?.length > 0 ? (
             allTasks?.map((item, index) => (
               <TaskCard
                 key={item._id}
@@ -87,9 +96,7 @@ const MyTask = () => {
                 progress={item.progress}
                 createdAt={item.createdAt}
                 dueDate={item.dueDate}
-                assignedTo={item.assignedTo?.map(
-                  (item) => item.profileImageUrl
-                )}
+                assignedTo={item.assignedTo?.map((item) => item.profileImageUrl)}
                 attachmentCount={item.attachments?.length || 0}
                 completedTodoCount={item.completedTodoCount || 0}
                 todoChecklist={item.todoChecklist || []}
@@ -97,10 +104,15 @@ const MyTask = () => {
               />
             ))
           ) : (
-            <div className="col-span-full text-center py-10">
-              <p className="text-gray-500">
-                No tasks found. Create a new task to get started.
-              </p>
+            <div className="col-span-full">
+              <EmptyState
+                message={
+                  filterStatus !== "All"
+                    ? `You don't have any tasks with status "${filterStatus}"`
+                    : "No tasks assigned to you yet. Sit tight!"
+                }
+                icon={MdOutlineTaskAlt}
+              />
             </div>
           )}
         </div>

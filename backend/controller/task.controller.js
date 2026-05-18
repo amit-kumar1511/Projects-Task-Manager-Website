@@ -27,6 +27,7 @@ export const createTask = async (req, res, next) => {
       attachments,
       todoChecklist,
       createdBy: req.user.id,
+      companyId: req.user.companyId,
     })
 
     res.status(201).json({ message: "Task created successfully", task })
@@ -48,13 +49,14 @@ export const getTasks = async (req, res, next) => {
     let tasks
 
     if (req.user.role === "admin") {
-      tasks = await Task.find(filter).populate(
+      tasks = await Task.find({ ...filter, companyId: req.user.companyId }).populate(
         "assignedTo",
         "name email profileImageUrl"
       )
     } else {
       tasks = await Task.find({
         ...filter,
+        companyId: req.user.companyId,
         assignedTo: req.user.id,
       }).populate("assignedTo", "name email profileImageUrl")
     }
@@ -72,12 +74,15 @@ export const getTasks = async (req, res, next) => {
     // status summary count
 
     const allTasks = await Task.countDocuments(
-      req.user.role === "admin" ? {} : { assignedTo: req.user.id }
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : { assignedTo: req.user.id, companyId: req.user.companyId }
     )
 
     const pendingTasks = await Task.countDocuments({
       ...filter,
       status: "Pending",
+      companyId: req.user.companyId,
       //   if logged in user is not admin then add assignedTo filter
       //  if logged in user is an admin then nothing to do, just count
       ...(req.user.role !== "admin" && { assignedTo: req.user.id }),
@@ -86,12 +91,14 @@ export const getTasks = async (req, res, next) => {
     const inProgressTasks = await Task.countDocuments({
       ...filter,
       status: "In Progress",
+      companyId: req.user.companyId,
       ...(req.user.role !== "admin" && { assignedTo: req.user.id }),
     })
 
     const completedTasks = await Task.countDocuments({
       ...filter,
       status: "Completed",
+      companyId: req.user.companyId,
       ...(req.user.role !== "admin" && { assignedTo: req.user.id }),
     })
 
@@ -111,10 +118,10 @@ export const getTasks = async (req, res, next) => {
 
 export const getTaskById = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "name email profileImageUrl"
-    )
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    }).populate("assignedTo", "name email profileImageUrl")
 
     if (!task) {
       return next(errorHandler(404, "Task not found!"))
@@ -128,7 +135,10 @@ export const getTaskById = async (req, res, next) => {
 
 export const updateTask = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    })
 
     if (!task) {
       return next(errorHandler(404, "Task not found!"))
@@ -163,7 +173,10 @@ export const updateTask = async (req, res, next) => {
 
 export const deleteTask = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    })
 
     if (!task) {
       return next(errorHandler(404, "Task not found!"))
@@ -179,7 +192,10 @@ export const deleteTask = async (req, res, next) => {
 
 export const updateTaskStatus = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    })
 
     if (!task) {
       return next(errorHandler(404, "Task not found!"))
@@ -211,7 +227,10 @@ export const updateTaskChecklist = async (req, res, next) => {
   try {
     const { todoChecklist } = req.body
 
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    })
 
     if (!task) {
       return next(errorHandler(404, "Task not found!"))
@@ -244,10 +263,10 @@ export const updateTaskChecklist = async (req, res, next) => {
 
     await task.save()
 
-    const updatedTask = await Task.findById(req.params.id).populate(
-      "assignedTo",
-      "name email profileImageUrl"
-    )
+    const updatedTask = await Task.findOne({
+      _id: req.params.id,
+      companyId: req.user.companyId,
+    }).populate("assignedTo", "name email profileImageUrl")
 
     res
       .status(200)
@@ -260,10 +279,18 @@ export const updateTaskChecklist = async (req, res, next) => {
 export const getDashboardData = async (req, res, next) => {
   try {
     // Fetch statistics
-    const totalTasks = await Task.countDocuments()
-    const pendingTasks = await Task.countDocuments({ status: "Pending" })
-    const completedTasks = await Task.countDocuments({ status: "Completed" })
+    const companyFilter = { companyId: req.user.companyId }
+    const totalTasks = await Task.countDocuments(companyFilter)
+    const pendingTasks = await Task.countDocuments({
+      ...companyFilter,
+      status: "Pending",
+    })
+    const completedTasks = await Task.countDocuments({
+      ...companyFilter,
+      status: "Completed",
+    })
     const overdueTasks = await Task.countDocuments({
+      ...companyFilter,
       status: { $ne: "Completed" },
       dueDate: { $lt: new Date() },
     })
@@ -271,6 +298,7 @@ export const getDashboardData = async (req, res, next) => {
     const taskStatuses = ["Pending", "In Progress", "Completed"]
 
     const taskDistributionRaw = await Task.aggregate([
+      { $match: companyFilter },
       {
         $group: {
           _id: "$status",
@@ -293,6 +321,7 @@ export const getDashboardData = async (req, res, next) => {
     const taskPriorities = ["Low", "Medium", "High"]
 
     const taskPriorityLevelRaw = await Task.aggregate([
+      { $match: companyFilter },
       {
         $group: {
           _id: "$priority",
@@ -309,7 +338,7 @@ export const getDashboardData = async (req, res, next) => {
     }, {})
 
     // Fetch recent 10 tasks
-    const recentTasks = await Task.find()
+    const recentTasks = await Task.find(companyFilter)
       .sort({ createdAt: -1 })
       .limit(10)
       .select("title status priority dueDate createdAt")
@@ -344,17 +373,25 @@ export const userDashboardData = async (req, res, next) => {
 
     // console.log(userObjectId)
 
+    const companyFilter = { companyId: req.user.companyId }
+
     // fetch statistics for user-specific tasks
-    const totalTasks = await Task.countDocuments({ assignedTo: userId })
+    const totalTasks = await Task.countDocuments({
+      ...companyFilter,
+      assignedTo: userId,
+    })
     const pendingTasks = await Task.countDocuments({
+      ...companyFilter,
       assignedTo: userId,
       status: "Pending",
     })
     const completedTasks = await Task.countDocuments({
+      ...companyFilter,
       assignedTo: userId,
       status: "Completed",
     })
     const overdueTasks = await Task.countDocuments({
+      ...companyFilter,
       assignedTo: userId,
       status: { $ne: "Completed" },
       dueDate: { $lt: new Date() },
@@ -365,7 +402,7 @@ export const userDashboardData = async (req, res, next) => {
 
     const taskDistributionRaw = await Task.aggregate([
       {
-        $match: { assignedTo: userObjectId },
+        $match: { assignedTo: userObjectId, companyId: req.user.companyId },
       },
       {
         $group: { _id: "$status", count: { $sum: 1 } },
@@ -389,7 +426,7 @@ export const userDashboardData = async (req, res, next) => {
     const taskPriorities = ["Low", "Medium", "High"]
 
     const taskPriorityLevelRaw = await Task.aggregate([
-      { $match: { assignedTo: userObjectId } },
+      { $match: { assignedTo: userObjectId, companyId: req.user.companyId } },
       {
         $group: {
           _id: "$priority",
@@ -405,7 +442,10 @@ export const userDashboardData = async (req, res, next) => {
       return acc
     }, {})
 
-    const recentTasks = await Task.find({ assignedTo: userObjectId })
+    const recentTasks = await Task.find({
+      assignedTo: userObjectId,
+      companyId: req.user.companyId,
+    })
       .sort({ createdAt: -1 })
       .limit(10)
       .select("title status priority dueDate createdAt")

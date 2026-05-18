@@ -47,12 +47,11 @@ const taskSchema = new mongoose.Schema(
       },
     ],
 
-    createdBy: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
     attachments: [
       {
@@ -63,6 +62,11 @@ const taskSchema = new mongoose.Schema(
     todoChecklist: [todoSchema],
 
     progress: { type: Number, default: 0 },
+    companyId: {
+      type: String,
+      required: true,
+      index: true,
+    },
   },
   { timestamps: true }
 )

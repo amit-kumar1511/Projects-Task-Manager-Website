@@ -1,34 +1,27 @@
 import User from "../models/user.model.js"
+import Company from "../models/company.model.js"
 import bcryptjs from "bcryptjs"
 import { errorHandler } from "../utils/error.js"
 import jwt from "jsonwebtoken"
+import crypto from "crypto"
 
 export const signup = async (req, res, next) => {
-  const { name, email, password, profileImageUrl, adminJoinCode } = req.body
+  const { name, email, password, profileImageUrl, companyId } = req.body
 
-  if (
-    !name ||
-    !email ||
-    !password ||
-    name === "" ||
-    email === "" ||
-    password === ""
-  ) {
-    return next(errorHandler(400, "All fields are required"))
+  if (!name || !email || !password || !companyId) {
+    return next(errorHandler(400, "All fields (including companyId) are required"))
   }
 
-  //   Check if user already exists
-  const isAlreadyExist = await User.findOne({ email })
+  // Check if company exists
+  const company = await Company.findOne({ companyId })
+  if (!company) {
+    return next(errorHandler(404, "Invalid Company ID. Please contact your admin."))
+  }
 
+  // Check if user already exists
+  const isAlreadyExist = await User.findOne({ email })
   if (isAlreadyExist) {
     return next(errorHandler(400, "User already exists"))
-  }
-
-  //   check user role
-  let role = "user"
-
-  if (adminJoinCode && adminJoinCode === process.env.ADMIN_JOIN_CODE) {
-    role = "admin"
   }
 
   const hashedPassword = bcryptjs.hashSync(password, 10)
@@ -38,15 +31,64 @@ export const signup = async (req, res, next) => {
     email,
     password: hashedPassword,
     profileImageUrl,
-    role,
+    role: "user",
+    companyId,
   })
 
   try {
     await newUser.save()
-
-    res.json("Signup successful")
+    res.json("User Signup successful")
   } catch (error) {
-    next(error.message)
+    next(error)
+  }
+}
+
+export const adminSignup = async (req, res, next) => {
+  const { name, email, password, companyName, profileImageUrl } = req.body
+
+  if (!name || !email || !password || !companyName) {
+    return next(errorHandler(400, "All fields are required"))
+  }
+
+  // Check if user already exists
+  const isAlreadyExist = await User.findOne({ email })
+  if (isAlreadyExist) {
+    return next(errorHandler(400, "User already exists"))
+  }
+
+  const hashedPassword = bcryptjs.hashSync(password, 10)
+  const generatedCompanyId = crypto.randomBytes(3).toString("hex").toUpperCase() // 6 chars unique ID
+
+  try {
+    // 1. Create User first (without companyId temporarily if needed, but our schema requires it)
+    // Actually, we'll create the company first, then the user.
+    
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      profileImageUrl,
+      role: "admin",
+      companyId: generatedCompanyId,
+    })
+
+    const savedUser = await newUser.save()
+
+    const newCompany = new Company({
+      name: companyName,
+      companyId: generatedCompanyId,
+      admin: savedUser._id,
+    })
+
+    await newCompany.save()
+
+    res.json({
+      message: "Admin Signup successful",
+      companyId: generatedCompanyId,
+      companyName,
+    })
+  } catch (error) {
+    next(error)
   }
 }
 
@@ -72,7 +114,7 @@ export const signin = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: validUser._id, role: validUser.role },
+      { id: validUser._id, role: validUser.role, companyId: validUser.companyId },
       process.env.JWT_SECRET
     )
 
@@ -110,6 +152,7 @@ export const updateUserProfile = async (req, res, next) => {
 
     user.name = req.body.name || user.name
     user.email = req.body.email || user.email
+    user.profileImageUrl = req.body.profileImageUrl || user.profileImageUrl
 
     if (req.body.password) {
       user.password = bcryptjs.hashSync(req.body.password, 10)

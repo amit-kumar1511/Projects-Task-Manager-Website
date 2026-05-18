@@ -4,7 +4,9 @@ import User from "../models/user.model.js"
 
 export const exportTaskReport = async (req, res, next) => {
   try {
-    const tasks = await Task.find().populate("assignedTo", "name email")
+    const tasks = await Task.find({
+      companyId: req.user.companyId,
+    }).populate("assignedTo", "name email")
 
     const workbook = new excelJs.Workbook()
     const worksheet = workbook.addWorksheet("Tasks Report")
@@ -55,9 +57,16 @@ export const exportTaskReport = async (req, res, next) => {
 
 export const exportUsersReport = async (req, res, next) => {
   try {
-    const users = await User.find().select("name email _id").lean()
+    const users = await User.find({
+      companyId: req.user.companyId,
+      role: "user",
+    })
+      .select("name email _id")
+      .lean()
 
-    const userTasks = await Task.find().populate("assignedTo", "name email _id")
+    const userTasks = await Task.find({
+      companyId: req.user.companyId,
+    }).populate("assignedTo", "name email _id")
 
     const userTaskMap = {}
 

@@ -2,6 +2,7 @@ import React from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import Login from "./pages/auth/Login"
 import SignUp from "./pages/auth/SignUp"
+import AdminSignUp from "./pages/auth/AdminSignUp"
 import Dashboard from "./pages/admin/Dashboard"
 import ManageTasks from "./pages/admin/ManageTasks"
 import ManageUsers from "./pages/admin/ManageUsers"
@@ -10,6 +11,8 @@ import PrivateRoute from "./routes/PrivateRoute"
 import UserDashboard from "./pages/user/UserDashboard"
 import TaskDetails from "./pages/user/TaskDetails"
 import MyTasks from "./pages/user/MyTasks"
+import Profile from "./pages/Profile"
+import LandingPage from "./pages/LandingPage"
 import { useSelector } from "react-redux"
 
 import toast, { Toaster } from "react-hot-toast"
@@ -21,6 +24,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/admin-signup" element={<AdminSignUp />} />
 
           {/* Admin Routes */}
           <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
@@ -37,6 +41,10 @@ const App = () => {
             <Route path="/user/task-details/:id" element={<TaskDetails />} />
           </Route>
 
+          <Route element={<PrivateRoute allowedRoles={["admin", "user"]} />}>
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+
           {/* Default Route */}
           <Route path="/" element={<Root />} />
         </Routes>
@@ -50,15 +58,5 @@ const App = () => {
 export default App
 
 const Root = () => {
-  const { currentUser } = useSelector((state) => state.user)
-
-  if (!currentUser) {
-    return <Navigate to={"/login"} />
-  }
-
-  return currentUser.role === "admin" ? (
-    <Navigate to={"/admin/dashboard"} />
-  ) : (
-    <Navigate to={"/user/dashboard"} />
-  )
+  return <LandingPage />
 }

@@ -4,7 +4,10 @@ import { errorHandler } from "../utils/error.js"
 
 export const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ role: "user" }).select("-password")
+    const users = await User.find({
+      role: "user",
+      companyId: req.user.companyId,
+    }).select("-password")
 
     const userWithTaskCounts = await Promise.all(
       users.map(async (user) => {
